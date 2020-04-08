@@ -22,17 +22,7 @@ var schema = new mongoose.Schema({
       type:String,
       required:true
     },
-    donationdetails:[
-      {
-        Date:{
-          type:Date
-        },
-        needypeople:{
-          type:mongoose.Schema.Types.ObjectId,
-          ref:"needyPeople"
-        }
-      }
-    ],
+    donationdetails:[{phoneno: Number, amount: Number}],
     token:String, // email verification
     active:{
       type:Boolean,

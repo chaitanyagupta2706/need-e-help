@@ -50,17 +50,7 @@ var schema = new mongoose.Schema({
       type:String,
       required:true
     },
-    needyPeopleDetails:[
-      {
-        Date:{
-          type:Date
-        },
-        needyPeopleList:{
-          type:mongoose.Schema.Types.ObjectId,
-          ref:"needyPeople"
-        }
-      }
-    ]
+    needyPeople:[{phoneno:Number}]
 
 
 });

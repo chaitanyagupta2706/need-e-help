@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+  <head>
+    <meta charset="utf-8">
+    <title><%= category %> </title>
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.11.2/css/all.css">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.0/umd/popper.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js"></script>
+    <script src="ejs.min.js"></script>
+
+      <%- include('./navbar_style') %>
+      <%- include('./header') %>
+  </head>
+  <body>
+    <div class="container">
+
+    <ul>
+
+      <div class="row text-center" id="one" style="display:flex; flex-wrap:wrap;">
+        <% files.forEach((file)=>{%>
+            <% if (file.metadata.category === category){%>
+              <div class="col-lg-4 col-sm-6 zoom">
+                <div class="img-thumbnail">
+                  <a href="/needy?phn=<%= file.metadata.Phone %>"> <img class="img-fluid" src="/image/<%= file.filename %>"></a>
+                  <div class="caption">
+                    <h5><%= file.metadata.NameofPerson %></h5>
+                  </div>
+                </div>
+              </div>
+            <% } %>
+
+              <!-- <h1>heading is <%= file.filename %></h1> -->
+              <!-- <img src="/image/<%= file.filename %>" alt="#"> -->
+
+        <%})%>
+      </div>
+
+    </ul>
+  </div>
+
+
+
+
+
+
+  </body>
+</html>

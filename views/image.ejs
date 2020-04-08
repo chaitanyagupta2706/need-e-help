@@ -34,7 +34,7 @@
           position: relative;
           margin: 5% auto;
           width: 900px;
-          height: 650px;
+          height: 200 px;
           background: #FFF;
           border-radius: 20px;
           box-shadow: 0 2px 4px rgba(0, 0, 0, 0.6);
@@ -46,8 +46,9 @@
           left: 0;
           box-sizing: border-box;
           padding: 40px;
-          width: 900px;
-          height: 400px;
+          width: 100%;
+          margin-top: 30%;
+          height: 50%;
         }
 
         h1 {
@@ -93,6 +94,7 @@
           font-weight: 500;
           text-transform: uppercase;
           cursor: pointer;
+          margin-left: 23%;
         }
 
         input[type="submit"]:hover,
@@ -125,6 +127,9 @@
           padding-top:10px;
           padding-bottom:20px;
         }
+        form{
+          margin-left: 28%;
+        }
 
       </style>
   </head>
@@ -133,63 +138,15 @@
       <div id="registration-box">
 
         <div class="Registration">
-          <h1>Needy Details</h1>
-          <form action="/needy_registration" method="post" >
+          <h1>Image uploading</h1>
+
+          <form action="/createImage" method="post" enctype="multipart/form-data">
             <div>
-              <label for="Name">Name : </label>
-              <input id="Name" type="text" name="NameofPerson" placeholder="Name of Person" required></<div class="">
+              <label for="photo">Upload a picture : </label>
+              <input type="file" id="photo" name="file" accept="image/png, image/jpeg" required>
             </div>
-            <div>
-              <label for="phone">Contact : </label>
-              <input type="tel" id="phone" name="Phone" pattern="[0-9]{10}" placeholder= "Contact No." required>
-            </div>
-
-            <div class="q">
-              <span>Gender   :   </span>
-              <label for="Male">Male</label>
-              <input id = "Male" name="Gender" type = "radio" value="Male" required>
-              <label for="Female">Female</label>
-              <input id = "Female" name="Gender" type = "radio" value="Female">
-              <label for="Others">Others</label>
-              <input id = "Others" name="Gender" type = "radio" value="Others">
-            </div>
-
-            <div class="w">
-              Category :
-              <select name="category" required>
-                <option>Education</option>
-                <option>Health</option>
-                <option>Women</option>
-                <option>Cancer Care</option>
-                <option>Children</option>
-                <option>Differently Abled</option>
-              </select>
-            </div>
-
-            <div class="q">
-              <span>Help By :   </span>
-              <label for="Sponsorship">Sponsorship</label>
-              <input id = "Sponsorship" name="HelpType" type = "radio" value="Sponsorship" required>
-              <label for="Donation">Donation</label>
-              <input id = "Donation" name="HelpType" type = "radio" value="Donation">
-            </div>
-
-            <div>
-              <label for="Goal">Total Amount Needed : </label>
-              <input id="Goal" type="text" name="Goal" placeholder="In Rs   (If Sposnsorship, Per Month)" required>
-            </div>
-
-            <div>
-              <label for="NGO-reg">NGO Reg. No : </label>
-              <input id="NGO-reg" type="text" name="reg_no" placeholder="NGO Registration Number" required>
-            </div>
-
-
-
-
             <input type="submit" name="submit" value="Submit">
           </form>
-
 
         </div>
 

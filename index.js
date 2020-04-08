@@ -17,6 +17,15 @@ var methodOverride = require("method-override");
 var flash = require("connect-flash");
 var nodemailer = require("nodemailer");
 var localStorage = require('local-storage');
+var multer = require('multer');
+var gridStorage = require('multer-gridfs-storage');
+var gridfsStream = require('gridfs-stream');
+var crypto = require('crypto-js');
+
+/*
+  gridfs logic corrected totall
+*/
+
 
 
 var forgotpassworduser;
@@ -32,11 +41,23 @@ var transporter = nodemailer.createTransport({
 });
 
 
-mongoose.connect('mongod://mongodb://localhost:27017/userDetails',{useNewUrlParser: true, useUnifiedTopology: true});
+mongoose.connect('mongodb://localhost:27017/userDetails',{useNewUrlParser: true, useUnifiedTopology: true });
 mongoose.set("useCreateIndex",true);
+const conn=mongoose.connection;
+
+//init gridfsStream
+var gfs;
+
+conn.once('open',()=>{
+
+  gfs = gridfsStream(conn.db,mongoose.mongo);
+  gfs.collection('fs');
+
+})
 
 
-app.use(bodyParser.urlencoded({extended:false}));
+
+app.use(bodyParser.urlencoded({extended:true}));
 app.use(bodyParser.json());
 
 app.set('view engine', 'ejs');
@@ -44,6 +65,7 @@ app.set('views', path.join(__dirname, 'views'));
 
 const User = require('./views/models/users.js');
 const Ngo = require('./views/models/ngos.js');
+const Needy = require('./views/models/needypeoples.js');
 app.use(cors());
 
 
@@ -73,43 +95,109 @@ app.use(function(req,res,next){
     res.locals.loadingMessage = req.flash("loading");
     res.locals.user = req.flash('userLogin');
 
-    console.log(res.locals);
+    // console.log(res.locals);
     next();
 });
 
 
+//create storage engine
+var storage = new gridStorage({
+  url: 'mongodb://localhost:27017/userDetails',
+  options: {useUnifiedTopology: true,useCreateIndex:true},
+  file: (req, file) => {
+
+    return new Promise((resolve, reject) => {
+
+          var randString = randomstring.generate();
+          const filename = randString+path.extname(file.originalname);
+          console.log("filename is");
+          console.log(filename);
+
+          const fileInfo = {
+            filename: filename,
+            bucketName: 'fs',
+            metadata:JSON.parse(localStorage.get("cat"))
+          };
+          resolve(fileInfo);
+
+        })
+
+  }
+});
+const upload = multer({ storage:storage });
+
+storage.on('connection', (db) => {
+  // Db is the database instance
+  console.log("image storing database is ready to use");
+});
+
+storage.on('connectionFailed', (err) => {
+  // err is the error received from MongoDb
+  console.log("Error in storing images in mongodb")
+  console.log(err);
+});
+
+
+
 app.get('/', function(req, res){
   console.log("inside /");
+
   console.log(JSON.parse(localStorage.get("user")));
   res.render("home",{user:JSON.parse(localStorage.get("user"))});
 });
 
 app.get('/userLogin',function(req,res){
+  if (JSON.parse(localStorage.get("user"))!==null){
+    req.flash("error","You can't hack the website");
+    res.redirect('/');
+    return;
+  }
   res.render("user_login",{user:undefined});
 });
 
 app.get('/myProfile',function(req,res){
-  res.render("myprofile",{user:JSON.parse(localStorage.get("user"))})
+    res.render("myprofile",{user:JSON.parse(localStorage.get("user"))})
 })
 
 
 app.get('/userSignup',function(req,res){
+  if (JSON.parse(localStorage.get("user"))!==null){
+    req.flash("error","You can't hack the website");
+    res.redirect('/');
+    return ;
+  }
   res.render("user_signup",{user:undefined});
 });
 
 app.get('/SignupOption',function(req,res){
+  if (JSON.parse(localStorage.get("user"))!==null){
+    req.flash("error","You can't hack the website");
+    res.redirect('/');
+    return ;
+  }
   res.render("SignupOption",{user:undefined})
 });
 
 app.get('/LoginOption',function(req,res){
+  if (JSON.parse(localStorage.get("user"))!==null){
+    req.flash("error","You can't hack the website");
+    res.redirect('/');
+    return ;
+  }
   res.render("LoginOption",{user:undefined})
 });
 
 app.get('/userLogin/forgotPassword', function(req, res){
+  if (JSON.parse(localStorage.get("user"))!==null){
+    req.flash("error","You can't hack the website");
+    res.redirect('/');
+    return ;
+  }
   res.render("forgot_password",{user:undefined});
 });
 
 app.get('/contact', function(req, res){
+
   res.render("contact",{user:JSON.parse(localStorage.get("user"))});
 });
 
@@ -134,27 +222,351 @@ app.get('/needy_registration', function(req, res){
 });
 
 app.get('/verify', function(req, res) {
+  if (JSON.parse(localStorage.get("user"))!==null){
+    req.flash("error","You can't hack the website");
+    res.redirect('/');
+    return ;
+  }
   res.render("verify",{user:undefined});
 });
 
 app.get('/verifyNgo', function(req, res) {
+  if (JSON.parse(localStorage.get("user"))!==null){
+    req.flash("error","You can't hack the website");
+    res.redirect('/');
+    return ;
+  }
   res.render("verifyNgo",{user:undefined});
 });
 
 app.get('/changepassword', function(req, res) {
+  if (JSON.parse(localStorage.get("user"))!==null){
+    req.flash("error","You can't hack the website");
+    res.redirect('/');
+    return ;
+  }
+  console.log(forgotpassworduser);
   res.render("changepassword",{user:undefined});
+});
+
+//Donation categories
+
+app.get("/image/:filename",(req,res)=>{
+  gfs.files.findOne({filename:req.params.filename},(err,file)=>{
+    //assuming image will always be png or jpeg as during needy form only these two types of images are accepted
+    var readStream = gfs.createReadStream(file.filename);
+    readStream.pipe(res);
+  })
+})
+
+app.get('/education', function(req, res) {
+  Needy.find({'category':"Education"}, function(err, result) {
+    console.log(result);
+    if(err) throw err;
+    if(result) {
+      // i am thinking that if result exists then image also exists
+      console.log("data found"+result);
+      gfs.files.find().toArray((err,files)=>{
+        console.log("files is:");
+
+
+        res.render("donationlist", {user:JSON.parse(localStorage.get("user")), category:"Education", data: result,files:files});
+      })
+
+    }
+    else {
+      console.log("Empty");
+      res.render("donationlist", {user:JSON.parse(localStorage.get("user")), category:"Education"});
+    }
+  });
+});
+
+app.get('/health', function(req, res) {
+  Needy.find({'category':"Health"}, function(err, result) {
+    if(err) throw err;
+    if(result) {
+      gfs.files.find().toArray((err,files)=>{
+        console.log("files is:");
+        console.log(files);
+
+        res.render("donationlist", {user:JSON.parse(localStorage.get("user")), category:"Health", data: result,files:files});
+      })
+    }
+    else {
+      console.log("Empty");
+      res.render("donationlist", {user:JSON.parse(localStorage.get("user")), category:"Health"});
+    }
+  });
+});
+
+app.get('/women', function(req, res) {
+  Needy.find({'category':"Women"}, function(err, result) {
+    if(err) throw err;
+    if(result) {
+      console.log("data found"+result);
+      gfs.files.find().toArray((err,files)=>{
+        console.log("files is:");
+        console.log(files);
+
+        res.render("donationlist", {user:JSON.parse(localStorage.get("user")), category:"Women", data: result,files:files});
+      })
+    }
+    else {
+      console.log("Empty");
+      res.render("donationlist", {user:JSON.parse(localStorage.get("user")), category:"Women"});
+    }
+  });
+});
+
+// app.get('/women', function(req, res) {
+//   Needy.find({'category':"Women"}, function(err, result) {
+//     if(err) throw err;
+//     if(result) {
+//       console.log("data found"+result);
+//       res.render("donationlist", {user:JSON.parse(localStorage.get("user")), category:"Women", data: result});
+//     }
+//     else {
+//       console.log("Empty");
+//       res.render("donationlist", {user:JSON.parse(localStorage.get("user")), category:"Women"});
+//     }
+//   });
+// });
+
+app.get('/cancercare', function(req, res) {
+  Needy.find({'category':"Cancer Care"}, function(err, result) {
+    if(err) throw err;
+    if(result) {
+      console.log("data found"+result);
+      gfs.files.find().toArray((err,files)=>{
+        console.log("files is:");
+        console.log(files);
+
+        res.render("donationlist", {user:JSON.parse(localStorage.get("user")), category:"Cancer Care", data: result,files:files});
+      })
+    }
+    else {
+      console.log("Empty");
+      res.render("donationlist", {user:JSON.parse(localStorage.get("user")), category:"Cancer Care"});
+    }
+  });
+});
+
+app.get('/children', function(req, res) {
+  Needy.find({'category':"Children"}, function(err, result) {
+    if(err) throw err;
+    if(result) {
+      console.log("data found"+result);
+      gfs.files.find().toArray((err,files)=>{
+        console.log("files is:");
+        console.log(files);
+
+        res.render("donationlist", {user:JSON.parse(localStorage.get("user")), category:"Children", data: result,files:files});
+      })
+    }
+    else {
+      console.log("Empty");
+      res.render("donationlist", {user:JSON.parse(localStorage.get("user")), category:"Children"});
+    }
+  });
+});
+
+app.get('/differentlyabled', function(req, res) {
+  Needy.find({'category':"Differently Abled"}, function(err, result) {
+    if(err) throw err;
+    if(result) {
+      console.log("data found"+result);
+      gfs.files.find().toArray((err,files)=>{
+        console.log("files is:");
+        console.log(files);
+
+        res.render("donationlist", {user:JSON.parse(localStorage.get("user")), category:"Differently Abled", data: result,files:files});
+      })
+    }
+    else {
+      console.log("Empty");
+      res.render("donationlist", {user:JSON.parse(localStorage.get("user")), category:"Differently Abled"});
+    }
+  });
+});
+
+
+app.get('/needy', function(req, res) {
+  const phoneno = req.query.phn;
+  Needy.findOne({'phoneno':phoneno}, function(err, result) {
+    if(err) throw err;
+    if(result) {
+      res.render("needyinfo",{user:JSON.parse(localStorage.get("user")), data: result});
+    }
+    else {
+      req.flash("error", "Massive error");
+      res.redirect("/");
+    }
+  });
+});
+
+app.post('/donate', function(req,res) {
+  const username = req.query.usr; //to locate user who donated
+  const phoneno = req.query.phn; //to locate needy
+  User.findOne({username:username}, function(err, result) {
+    if(err) return err;
+    if(result) {
+      result.donationdetails.push({phoneno:phoneno, amount: req.body.donation});
+      result.save();
+      Needy.findOne({phoneno:phoneno}, function(err1, result1) {
+        if(err1) return err1;
+        if(result1) {
+          result1.amount = result1.amount+req.body.donation;
+          result1.save();
+          res.render("donated",{user:JSON.parse(localStorage.get("user")), type:"Donation"});
+        }
+      });
+    }
+  });
+});
+
+app.post('/sponsor', function(req,res) {
+  const username = req.query.usr; //to locate user who donated
+  const phoneno = req.query.phn; //to locate needy
+  User.findOne({username:username}, function(err, result) {
+    if(err) return err;
+    if(result) {
+      result.donationdetails.push({phoneno:phoneno, amount: result1.goal/10});
+      result.save();
+      Needy.findOne({phoneno:phoneno}, function(err1, result1) {
+        if(err1) return err1;
+        if(result1) {
+          result1.amount = result1.amount+(result1.goal/10);
+          result1.save();
+          res.render("donated",{user:JSON.parse(localStorage.get("user")), type:"Sponsorship"});
+        }
+      });
+    }
+  });
+});
+
+app.get('/createImage',(req,res)=>{
+  if (JSON.parse(localStorage.get("user"))===null||JSON.parse(localStorage.get("user"))===undefined){
+    req.flash("error","You can't hack the website");
+    res.redirect('/');
+    return ;
+  }
+  if (localStorage.get("show")!== true||localStorage.get("show")===null||localStorage.get("show")===undefined){
+    req.flash("error","You can't hack the website");
+    res.redirect('/');
+    return ;
+  }
+
+  res.render("image.ejs",{user:JSON.parse(localStorage.get("user"))});
+})
+
+
+app.post("/createImage",upload.single('file'),(req,res)=>{
+
+  if (localStorage.get("show")!== true||localStorage.get("show")===null||localStorage.get("show")===undefined){
+    req.flash("error","You can't hack the website");
+    res.redirect('/');
+    return ;
+  }
+  if (JSON.parse(localStorage.get("user"))===null||JSON.parse(localStorage.get("user"))===undefined){
+    req.flash("error","You can't hack the website");
+    res.redirect('/');
+    return ;
+  }
+  localStorage.set('show',false);
+  localStorage.set("cat",null);
+  req.flash("success", "Needy registered successfully");
+  res.redirect('/');
+})
+
+app.post('/needy_registration',(req,res)=> {
+  console.log("needy registration is:");
+  console.log(req.body);
+
+  var cat = req.body;
+  localStorage.set('cat',JSON.stringify(cat))
+  localStorage.set("show",true);
+  // req.file.cat = req.body.category;
+  var photos = {
+    file:req.file
+  }
+
+  console.log("photos is:");
+  console.log(photos);
+  console.log("upload is: ");
+  console.log(storage);
+
+  // console.log(photos);
+  // console.log(storage);
+  const name = req.body.NameofPerson;
+  const phoneno = req.body.Phone;
+  const gender = req.body.Gender;
+  const category = req.body.category;
+  const HelpType = req.body.HelpType;
+  const goal = req.body.Goal;
+  const regno = req.body.reg_no;
+  const newNeedy = new Needy({
+    name: name,
+    phoneno: phoneno,
+    gender: gender,
+    category: category,
+    HelpType: HelpType,
+    goal: goal,
+    regno: regno
+  });
+  newNeedy.amount = 0;
+  Ngo.findOne({regnumber: regno}, function(err, result) {
+    if(err) throw err;
+    if(result) {
+      // console.log("Ngo Found : "+result);
+      result.needyPeople.push({phoneno: phoneno});
+      result.save();
+      newNeedy.save(function(err) {
+        if(err) {
+          req.flash("error", "Error connecting to database");
+          res.redirect("/");
+          console.log(err);
+          return handleError(err);
+        }
+        console.log("file uploading");
+
+        req.flash("success", "Needy registered successfully");
+        res.redirect("/createImage");
+      });
+    }
+    else {
+      req.flash("error", "Wrong registration number");
+      res.redirect("/");
+    }
+  });
 });
 
 app.post('/changepassword', function(req, res) {
   const password = req.body.password;
   const password2 = req.body.password2;
-
+  console.log("password="+password+" password2="+password2);
   if(password !== password2) {
+    console.log("passwords don't match");
     req.flash("error","Passwords don't match");
-    res.redirect('/changepassword');
-    return;
+    res.redirect('/');
   }
-  //change password in forgotpassworduser using bcrypt
+  else {
+    //change password in forgotpassworduser using bcrypt
+    bcryptNodejs.hash(password, null, null, (err, hash)=> {
+      if(err) {
+        console.log(err);
+        console.log("encryption falied");
+        req.flash("error","Encryption Failed");
+        res.redirect('/');
+      }
+      else {
+        console.log("password changed");
+        forgotpassworduser.password = hash;
+        forgotpassworduser.save();
+        req.flash("success", "Password successfully changed");
+        res.redirect('/');
+      }
+    });
+  }
 });
 
 app.post('/verify', function(req, res) {
@@ -202,10 +614,11 @@ app.post('/userLogin/forgotPassword', function(req, res){
   User.findOne({'email':email}, function(err, result) {
     if(result) {
       forgotpassworduser = result;
+      res.redirect("/");
     }
     else {
       console.log("No user found with that email");
-      req.flash("No such user found");
+      req.flash("error","No such user found");
       res.redirect('/userLogin/forgotPassword');
       return;
     }
@@ -225,7 +638,6 @@ app.post('/userLogin/forgotPassword', function(req, res){
     }
   });
   req.flash("success","An email has been sent for password recovery");
-  res.redirect("/");
 });
 
 app.post('/userSignupPost',function(req,res){
@@ -513,6 +925,12 @@ app.post('/ngoLoginPost',function(req,res){
         }
   })
 })
+
+
+
+
+
+
 
 //Logout
 
