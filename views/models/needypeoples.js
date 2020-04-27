@@ -7,6 +7,14 @@ var schema = new mongoose.Schema({
       type:String,
       required:true
     },
+    Intro:{
+      type:String,
+      required:true
+    },
+    Place:{
+      type:String,
+      required:true
+    },
     phoneno:{
       type:String,
       required:true
@@ -27,6 +35,11 @@ var schema = new mongoose.Schema({
       type:Number,
       required:true
     },
+    aboutneedy:{
+      type:String,
+      default:"",
+      required:true
+    },
     amount:{
       type:Number,
       required:false
@@ -34,8 +47,12 @@ var schema = new mongoose.Schema({
     regno:{
       type:Number,
       required:true
-    }
-    //image storage will be done later
+    },
+    numofsponsors:{
+      type:Number,
+      required:false
+    },
+    sponsors:[{user:String}]
 });
 //model formation
 var model = mongoose.model("NeedyPeople",schema);

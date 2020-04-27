@@ -34,7 +34,7 @@
           position: relative;
           margin: 5% auto;
           width: 900px;
-          height: 650px;
+          height: 820px;
           background: #FFF;
           border-radius: 20px;
           box-shadow: 0 2px 4px rgba(0, 0, 0, 0.6);
@@ -112,7 +112,7 @@
 
         textarea {
             width: 800px;
-            height: 150px;
+            height: 100px;
             padding-right: : 40px;
         }
 
@@ -142,6 +142,16 @@
             <div>
               <label for="phone">Contact : </label>
               <input type="tel" id="phone" name="Phone" pattern="[0-9]{10}" placeholder= "Contact No." required>
+            </div>
+
+            <div>
+              <label for="Intro">Introduction : </label>
+              <input type="text" id="Intro" name="Intro" placeholder= "Eg - Gift education to an underpriveledged child" required>
+            </div>
+
+            <div>
+              <label for="Place">Location : </label>
+              <input type="text" id="Place" name="Place" placeholder= "Eg - Punjab" required>
             </div>
 
             <div class="q">
@@ -185,7 +195,10 @@
             </div>
 
 
-
+            <p id="id">About Needy (Maximum 1000 Characters allowed)</p>
+            <label for="About-needy"></label>
+            <textarea id="About-needy" name="aboutneedy" rows="1" cols="20" maxlength="1000">
+            </textarea>
 
             <input type="submit" name="submit" value="Submit">
           </form>

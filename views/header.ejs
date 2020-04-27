@@ -91,6 +91,21 @@
           <li class="nav-item active hov">
             <a class="nav-link" href="/contact">Contact<span class="sr-only">(current)</span></a>
           </li>
+
+          <li class="nav-item dropdown active hov">
+            <a class="nav-link dropdown-toggle" href="/" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+              Category
+            </a>
+            <!-- Category -->
+            <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                <a class="dropdown-item" href="/education">Education</a>
+                <a class="dropdown-item" href="/health">Health</a>
+                <a class="dropdown-item" href="/women">Women</a>
+                <a class="dropdown-item" href="/cancercare">Cancer Care</a>
+                <a class="dropdown-item" href="/children">Children</a>
+                <a class="dropdown-item" href="/differentlyabled">Differently Abled</a>
+            </div>
+          </li>
           <!-- <li class="nav-item active hov">
             <a class="nav-link" href="/ngo-registration">NGO Registeration<span class="sr-only">(current)</span></a>
           </li> -->
@@ -106,10 +121,10 @@
             </a>
             <div class="dropdown-menu" aria-labelledby="navbarDropdown">
               <% if (user!=undefined&&user.isUser == true){ %>
-              <a class="dropdown-item" href="/myProfile">My Profile</a>
-              <a class="dropdown-item" href="/myDonation">My Donations</a>
+              <!-- <a class="dropdown-item" href="/myProfile">My Profile</a> -->
+              <a class="dropdown-item" href="/myDonation?usr=<%= user.username %>">My Donations</a>
               <% }else{ %>
-                <a class="dropdown-item" href="/ngoProfile">My Profile</a>
+                <!-- <a class="dropdown-item" href="/ngoProfile">My Profile</a> -->
               <% } %>
               <a class="dropdown-item"href="/logout">Logout</a>
             </div>

@@ -22,7 +22,7 @@ var schema = new mongoose.Schema({
       type:String,
       required:true
     },
-    donationdetails:[{phoneno: Number, amount: Number}],
+    donationdetails:[{phoneno: Number, amount: Number, needyname: String, helptype: String, category: String}],
     token:String, // email verification
     active:{
       type:Boolean,

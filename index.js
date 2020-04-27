@@ -26,7 +26,40 @@ var crypto = require('crypto-js');
   gridfs logic corrected totall
 */
 
+//simulating sponsorship programme
+//30sec = 1 month
 
+setTimeout(updateSponsor,30000);
+
+function updateSponsor() {
+  //{numofsponsors: {$gt: 0}}
+  console.log("NEW MONTH!!");
+  Needy.find({numofsponsors: {$gt: 0}}, function(err, result) {
+    if(err) throw err;
+    if(result) {
+      result.forEach(function (curneedy) {
+        if(curneedy.goal > curneedy.amount) {
+        curneedy.amount = Number(curneedy.amount) + Number(Number(curneedy.goal)/10 * Number(curneedy.numofsponsors));
+        curneedy.sponsors.forEach(function (curuser) {
+          User.findOne({username:curuser.user}, function(err1, result1) {
+            if(err1) throw err1;
+            if(result1) {
+              console.log(" donated to "+ curneedy);
+              result1.donationdetails.push({phoneno:curneedy.phoneno, amount: curneedy.goal/10, needyname: curneedy.name, helptype: curneedy.HelpType, category: curneedy.category});
+              result1.save();
+            }
+            else {
+              console.log("No user found :/");
+            }
+          });
+        });
+        curneedy.save();
+      }
+      });
+    }
+  });
+  setTimeout(updateSponsor,30000);
+}
 
 var forgotpassworduser;
 
@@ -148,7 +181,7 @@ app.get('/', function(req, res){
 
 app.get('/userLogin',function(req,res){
   if (JSON.parse(localStorage.get("user"))!==null){
-    req.flash("error","You can't hack the website");
+    req.flash("error","That action is not allowed");
     res.redirect('/');
     return;
   }
@@ -162,7 +195,7 @@ app.get('/myProfile',function(req,res){
 
 app.get('/userSignup',function(req,res){
   if (JSON.parse(localStorage.get("user"))!==null){
-    req.flash("error","You can't hack the website");
+    req.flash("error","That action is not allowed");
     res.redirect('/');
     return ;
   }
@@ -171,7 +204,7 @@ app.get('/userSignup',function(req,res){
 
 app.get('/SignupOption',function(req,res){
   if (JSON.parse(localStorage.get("user"))!==null){
-    req.flash("error","You can't hack the website");
+    req.flash("error","That action is not allowed");
     res.redirect('/');
     return ;
   }
@@ -180,7 +213,7 @@ app.get('/SignupOption',function(req,res){
 
 app.get('/LoginOption',function(req,res){
   if (JSON.parse(localStorage.get("user"))!==null){
-    req.flash("error","You can't hack the website");
+    req.flash("error","That action is not allowed");
     res.redirect('/');
     return ;
   }
@@ -189,7 +222,7 @@ app.get('/LoginOption',function(req,res){
 
 app.get('/userLogin/forgotPassword', function(req, res){
   if (JSON.parse(localStorage.get("user"))!==null){
-    req.flash("error","You can't hack the website");
+    req.flash("error","That action is not allowed");
     res.redirect('/');
     return ;
   }
@@ -199,6 +232,11 @@ app.get('/userLogin/forgotPassword', function(req, res){
 app.get('/contact', function(req, res){
 
   res.render("contact",{user:JSON.parse(localStorage.get("user"))});
+});
+
+app.get('/category_options', function(req, res){
+
+  res.render("category_options",{user:JSON.parse(localStorage.get("user"))});
 });
 
 app.get('/about', function(req, res){
@@ -223,16 +261,32 @@ app.get('/needy_registration', function(req, res){
 
 app.get('/verify', function(req, res) {
   if (JSON.parse(localStorage.get("user"))!==null){
-    req.flash("error","You can't hack the website");
+    req.flash("error","That action is not allowed");
     res.redirect('/');
     return ;
   }
   res.render("verify",{user:undefined});
 });
 
+app.get('/myDonation', function(req, res) {
+  const usrnm = req.query.usr;
+  var donationdetailsarray;
+  User.findOne({'username':usrnm}, function(err, result) {
+    if(err) throw err;
+    if(result) {
+      donationdetailsarray = result.donationdetails;
+      if(donationdetailsarray.length > 0)
+        res.render("myDonation",{user:JSON.parse(localStorage.get("user")), data:donationdetailsarray});
+      else
+        res.render("myDonation",{user:JSON.parse(localStorage.get("user")), data:"NONE"});
+    }
+  });
+});
+
+
 app.get('/verifyNgo', function(req, res) {
   if (JSON.parse(localStorage.get("user"))!==null){
-    req.flash("error","You can't hack the website");
+    req.flash("error","That action is not allowed");
     res.redirect('/');
     return ;
   }
@@ -241,7 +295,7 @@ app.get('/verifyNgo', function(req, res) {
 
 app.get('/changepassword', function(req, res) {
   if (JSON.parse(localStorage.get("user"))!==null){
-    req.flash("error","You can't hack the website");
+    req.flash("error","That action is not allowed");
     res.redirect('/');
     return ;
   }
@@ -336,7 +390,9 @@ app.get('/cancercare', function(req, res) {
   Needy.find({'category':"Cancer Care"}, function(err, result) {
     if(err) throw err;
     if(result) {
-      console.log("data found"+result);
+      console.log("data found:");
+      // console.log(result[0].gender);
+      // console.log(result);
       gfs.files.find().toArray((err,files)=>{
         console.log("files is:");
         console.log(files);
@@ -410,13 +466,13 @@ app.post('/donate', function(req,res) {
   User.findOne({username:username}, function(err, result) {
     if(err) return err;
     if(result) {
-      result.donationdetails.push({phoneno:phoneno, amount: req.body.donation});
-      result.save();
       Needy.findOne({phoneno:phoneno}, function(err1, result1) {
         if(err1) return err1;
         if(result1) {
-          result1.amount = result1.amount+req.body.donation;
+          result1.amount = Number(result1.amount)+Number(req.body.donation);
           result1.save();
+          result.donationdetails.push({phoneno:phoneno, amount: req.body.donation, needyname: result1.name, helptype: result1.HelpType, category: result1.category});
+          result.save();
           res.render("donated",{user:JSON.parse(localStorage.get("user")), type:"Donation"});
         }
       });
@@ -427,31 +483,32 @@ app.post('/donate', function(req,res) {
 app.post('/sponsor', function(req,res) {
   const username = req.query.usr; //to locate user who donated
   const phoneno = req.query.phn; //to locate needy
+
   User.findOne({username:username}, function(err, result) {
     if(err) return err;
     if(result) {
-      result.donationdetails.push({phoneno:phoneno, amount: result1.goal/10});
-      result.save();
       Needy.findOne({phoneno:phoneno}, function(err1, result1) {
         if(err1) return err1;
         if(result1) {
-          result1.amount = result1.amount+(result1.goal/10);
+          result1.numofsponsors = Number(result1.numofsponsors) + 1;
+          result1.sponsors.push({user:username});
           result1.save();
           res.render("donated",{user:JSON.parse(localStorage.get("user")), type:"Sponsorship"});
         }
       });
     }
   });
+
 });
 
 app.get('/createImage',(req,res)=>{
   if (JSON.parse(localStorage.get("user"))===null||JSON.parse(localStorage.get("user"))===undefined){
-    req.flash("error","You can't hack the website");
+    req.flash("error","That action is not allowed");
     res.redirect('/');
     return ;
   }
   if (localStorage.get("show")!== true||localStorage.get("show")===null||localStorage.get("show")===undefined){
-    req.flash("error","You can't hack the website");
+    req.flash("error","That action is not allowed");
     res.redirect('/');
     return ;
   }
@@ -463,12 +520,12 @@ app.get('/createImage',(req,res)=>{
 app.post("/createImage",upload.single('file'),(req,res)=>{
 
   if (localStorage.get("show")!== true||localStorage.get("show")===null||localStorage.get("show")===undefined){
-    req.flash("error","You can't hack the website");
+    req.flash("error","That action is not allowed");
     res.redirect('/');
     return ;
   }
   if (JSON.parse(localStorage.get("user"))===null||JSON.parse(localStorage.get("user"))===undefined){
-    req.flash("error","You can't hack the website");
+    req.flash("error","That action is not allowed");
     res.redirect('/');
     return ;
   }
@@ -498,6 +555,8 @@ app.post('/needy_registration',(req,res)=> {
   // console.log(photos);
   // console.log(storage);
   const name = req.body.NameofPerson;
+  const Intro = req.body.Intro;
+  const Place = req.body.Place;
   const phoneno = req.body.Phone;
   const gender = req.body.Gender;
   const category = req.body.category;
@@ -511,9 +570,12 @@ app.post('/needy_registration',(req,res)=> {
     category: category,
     HelpType: HelpType,
     goal: goal,
-    regno: regno
+    regno: regno,
+    Intro: Intro,
+    Place: Place
   });
   newNeedy.amount = 0;
+  newNeedy.numofsponsors = 0;
   Ngo.findOne({regnumber: regno}, function(err, result) {
     if(err) throw err;
     if(result) {
@@ -614,30 +676,29 @@ app.post('/userLogin/forgotPassword', function(req, res){
   User.findOne({'email':email}, function(err, result) {
     if(result) {
       forgotpassworduser = result;
-      res.redirect("/");
+      console.log(email);
+      var mailOptions = {
+        from: 'gcgcgc926@gmail.com',
+        to: ''+email,
+        subject: 'Forgot your password?',
+        html: `<h1>Click on the link given below to change password</h1>
+               <br><br> <a href="http://localhost:3000/changepassword">Change password</a>`
+      };
+      transporter.sendMail(mailOptions, function(error, info) {
+        if(error) console.log(error);
+        else {
+          console.log("email sent "+ info.response);
+          req.flash("success", "Password recovery email sent!");
+          res.redirect("/");
+        }
+      });
     }
     else {
       console.log("No user found with that email");
       req.flash("error","No such user found");
-      res.redirect('/userLogin/forgotPassword');
-      return;
+      res.redirect('/userLogin');
     }
-  });
-  console.log(email);
-  var mailOptions = {
-    from: 'gcgcgc926@gmail.com',
-    to: ''+email,
-    subject: 'Forgot your password?',
-    html: `<h1>Click on the link given below to change password</h1>
-           <br><br> <a href="http://localhost:3000/changepassword">Change password</a>`
-  };
-  transporter.sendMail(mailOptions, function(error, info) {
-    if(error) console.log(error);
-    else {
-      console.log("email sent "+ info.response);
-    }
-  });
-  req.flash("success","An email has been sent for password recovery");
+    });
 });
 
 app.post('/userSignupPost',function(req,res){
@@ -927,11 +988,6 @@ app.post('/ngoLoginPost',function(req,res){
 })
 
 
-
-
-
-
-
 //Logout
 
 app.get('/logout',function(req,res){
@@ -940,7 +996,6 @@ app.get('/logout',function(req,res){
   req.flash("success","you have successfully logged out")
   res.redirect('/');
 })
-
 
 
 app.listen('3000',function(){
