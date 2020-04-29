@@ -108,11 +108,13 @@ var forgotpassworduser;
 
 //setting up nodemailer
 //https://myaccount.google.com/lesssecureapps visit this link and turn on the feature
+//personal username and password of gmail account have not been added here but all the functions
+//have been tested
 var transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
-    user: 'gcgcgc926@gmail.com',
-    pass: 'Chaitanyagupta@1'
+    user: '',
+    pass: ''
   }
 });
 
