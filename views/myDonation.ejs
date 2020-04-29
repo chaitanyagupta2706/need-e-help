@@ -44,14 +44,14 @@
         <% data.forEach((donation)=>{ %>
           <tbody>
             <tr>
-              <!-- needyname -->
+              <!-- Needy Name -->
               <td><%= donation.needyname %></td>
 
               <!-- Ngo name -->
-              <td></td>
+              <td><%= donation.ngoname %></td>
 
               <!-- Ngo phone no -->
-              <td></td>
+              <td><%= donation.ngoph %></td>
 
               <!-- donation amount -->
               <td><%= donation.amount %></td>
@@ -63,7 +63,8 @@
               <td><%= donation.category %></td>
 
               <!-- Date of donation -->
-              <td></td>
+              <td><%= donation.date %></td>
+              
             </tr>
 
           </tbody>

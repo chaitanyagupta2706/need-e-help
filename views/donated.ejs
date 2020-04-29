@@ -9,16 +9,31 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.0/umd/popper.min.js"></script>
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js"></script>
     <script src="ejs.min.js"></script>
+    <style>
+      .t{
+        padding-top: 15%;
+        text-align: center;
+      }
+
+      hr{
+        color: black;
+      }
+    </style>
 
       <%- include('./navbar_style') %>
       <%- include('./header') %>
   </head>
   <body>
-    <% if(type == "Donation") { %>
-      <h1>DONATION SUCCESS</h1>
-    <% } %>
-    <% if(type == "Sponsorship") { %>
-      <h1>SPONSORSHIP SUCCESS</h1>
-    <% } %>
+    <div class="container t">
+      <% if(type == "Donation") { %>
+        <h1>Thank You for Donating</h1>
+        <hr>
+      <% } %>
+      <% if(type == "Sponsorship") { %>
+        <h1>Thank You for Sponsoring</h1>
+        <hr>
+      <% } %>
+    </div>
+
   </body>
 </html>

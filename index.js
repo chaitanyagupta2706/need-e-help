@@ -29,6 +29,41 @@ var crypto = require('crypto-js');
 //simulating sponsorship programme
 //30sec = 1 month
 
+//OLD FUNCTION timeout
+
+
+// setTimeout(updateSponsor,30000);
+//
+// function updateSponsor() {
+//   //{numofsponsors: {$gt: 0}}
+//   console.log("NEW MONTH!!");
+//   Needy.find({numofsponsors: {$gt: 0}}, function(err, result) {
+//     if(err) throw err;
+//     if(result) {
+//       result.forEach(function (curneedy) {
+//         if(curneedy.goal > curneedy.amount) {
+//         curneedy.amount = Number(curneedy.amount) + Number(Number(curneedy.goal)/10 * Number(curneedy.numofsponsors));
+//         curneedy.sponsors.forEach(function (curuser) {
+//           User.findOne({username:curuser.user}, function(err1, result1) {
+//             if(err1) throw err1;
+//             if(result1) {
+//               console.log(" donated to "+ curneedy);
+//               result1.donationdetails.push({phoneno:curneedy.phoneno, amount: curneedy.goal/10, needyname: curneedy.name, helptype: curneedy.HelpType, category: curneedy.category});
+//               result1.save();
+//             }
+//             else {
+//               console.log("No user found :/");
+//             }
+//           });
+//         });
+//         curneedy.save();
+//       }
+//       });
+//     }
+//   });
+//   setTimeout(updateSponsor,30000);
+// }
+
 setTimeout(updateSponsor,30000);
 
 function updateSponsor() {
@@ -40,13 +75,21 @@ function updateSponsor() {
       result.forEach(function (curneedy) {
         if(curneedy.goal > curneedy.amount) {
         curneedy.amount = Number(curneedy.amount) + Number(Number(curneedy.goal)/10 * Number(curneedy.numofsponsors));
+        curneedy.save();
         curneedy.sponsors.forEach(function (curuser) {
           User.findOne({username:curuser.user}, function(err1, result1) {
             if(err1) throw err1;
             if(result1) {
               console.log(" donated to "+ curneedy);
-              result1.donationdetails.push({phoneno:curneedy.phoneno, amount: curneedy.goal/10, needyname: curneedy.name, helptype: curneedy.HelpType, category: curneedy.category});
-              result1.save();
+              var d = new Date();
+              var curdate = ""+d.getDate()+"-"+d.getMonth()+"-"+d.getFullYear();
+              Ngo.findOne({regnumber: curneedy.regno}, function(err2, result2) {
+                if(err2) throw err2;
+                if(result2) {
+                  result1.donationdetails.push({phoneno:curneedy.phoneno, amount: curneedy.goal/10, needyname: curneedy.name, helptype: curneedy.HelpType, category: curneedy.category, date: curdate, ngoname: result2.username, ngoph: result2.phoneno});
+                  result1.save();
+                }
+              });
             }
             else {
               console.log("No user found :/");
@@ -444,22 +487,75 @@ app.get('/differentlyabled', function(req, res) {
     }
   });
 });
+// app.get('/needy', function(req, res) {
+//   const phoneno = req.query.phn;
+//   Needy.findOne({'phoneno':phoneno}, function(err, result) {
+//     if(err) throw err;
+//     if(result) {
+//       Ngo.findOne({regnumber: result.regno}, function(err1,result1) {
+//         if(err1) throw err1;
+//         if(result1) {
+//           res.render("needyinfo",{user:JSON.parse(localStorage.get("user")), data: result, ngodata: result1});
+//         }
+//       });
+//     }
+//     else {
+//       req.flash("error", "Massive error");
+//       res.redirect("/");
+//     }
+//   });
+// });
 
 
 app.get('/needy', function(req, res) {
   const phoneno = req.query.phn;
   Needy.findOne({'phoneno':phoneno}, function(err, result) {
+    // console.log("ll");
     if(err) throw err;
-    if(result) {
-      res.render("needyinfo",{user:JSON.parse(localStorage.get("user")), data: result});
+    if(result)
+     {
+            Ngo.findOne({regnumber: result.regno}, function(err1,result1) {
+            if(err1) throw err1;
+            if(result1)
+            {
+                gfs.files.find().toArray((err,files)=>{
+                res.render("needyinfo",{user:JSON.parse(localStorage.get("user")),phoneNo:phoneno,data: result,files:files, ngodata: result1});
+                // res.render("needyinfo",{user:JSON.parse(localStorage.get("user")), data: result, ngodata: result1});
+            });
+          }
+      });
     }
     else {
       req.flash("error", "Massive error");
       res.redirect("/");
     }
+
+
   });
 });
 
+//OLD FUNCTION
+// app.post('/donate', function(req,res) {
+//   const username = req.query.usr; //to locate user who donated
+//   const phoneno = req.query.phn; //to locate needy
+//   User.findOne({username:username}, function(err, result) {
+//     if(err) return err;
+//     if(result) {
+//       Needy.findOne({phoneno:phoneno}, function(err1, result1) {
+//         if(err1) return err1;
+//         if(result1) {
+//           result1.amount = Number(result1.amount)+Number(req.body.donation);
+//           result1.save();
+//           result.donationdetails.push({phoneno:phoneno, amount: req.body.donation, needyname: result1.name, helptype: result1.HelpType, category: result1.category});
+//           result.save();
+//           res.render("donated",{user:JSON.parse(localStorage.get("user")), type:"Donation"});
+//         }
+//       });
+//     }
+//   });
+// });
+
+//NEW function
 app.post('/donate', function(req,res) {
   const username = req.query.usr; //to locate user who donated
   const phoneno = req.query.phn; //to locate needy
@@ -471,8 +567,16 @@ app.post('/donate', function(req,res) {
         if(result1) {
           result1.amount = Number(result1.amount)+Number(req.body.donation);
           result1.save();
-          result.donationdetails.push({phoneno:phoneno, amount: req.body.donation, needyname: result1.name, helptype: result1.HelpType, category: result1.category});
-          result.save();
+          var d = new Date();
+          var curdate = ""+d.getDate()+"-"+d.getMonth()+"-"+d.getFullYear();
+          Ngo.findOne({regnumber: result1.regno}, function(err2, result2) {
+            if(err2) throw err2;
+            if(result2) {
+              result.donationdetails.push({phoneno:phoneno, amount: req.body.donation, needyname: result1.name, helptype: result1.HelpType, category: result1.category, date: curdate, ngoname: result2.username, ngoph: result2.phoneno});
+              result.save();
+            }
+          });
+
           res.render("donated",{user:JSON.parse(localStorage.get("user")), type:"Donation"});
         }
       });
@@ -556,6 +660,7 @@ app.post('/needy_registration',(req,res)=> {
   // console.log(storage);
   const name = req.body.NameofPerson;
   const Intro = req.body.Intro;
+  const aboutneedy = req.body.aboutneedy
   const Place = req.body.Place;
   const phoneno = req.body.Phone;
   const gender = req.body.Gender;
@@ -572,7 +677,8 @@ app.post('/needy_registration',(req,res)=> {
     goal: goal,
     regno: regno,
     Intro: Intro,
-    Place: Place
+    Place: Place,
+    aboutneedy: aboutneedy,
   });
   newNeedy.amount = 0;
   newNeedy.numofsponsors = 0;

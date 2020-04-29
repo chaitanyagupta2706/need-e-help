@@ -17,7 +17,8 @@ var schema = new mongoose.Schema({
     },
     phoneno:{
       type:String,
-      required:true
+      required:true,
+      unique:true
     },
     gender:{
       type:String,
@@ -37,7 +38,6 @@ var schema = new mongoose.Schema({
     },
     aboutneedy:{
       type:String,
-      default:"",
       required:true
     },
     amount:{
